@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <dirent.h>
 #include <ctype.h>
 #include <string.h>
 #include <unistd.h>
@@ -16,6 +17,8 @@
 #define NUM_BROWSER 128
 #define DATA_DIR "./sessions"
 #define SESSION_PATH_LEN 128
+
+#define LENOF(x)    (sizeof(x) / sizeof((x)[0]))
 
 typedef struct browser_struct {
     bool in_use;
@@ -224,6 +227,45 @@ void broadcast(int session_id, const char message[]) {
 void get_session_file_path(int session_id, char path[]) {
     sprintf(path, "%s/session%d.dat", DATA_DIR, session_id);
 }
+/**
+ * !!!!NEVER MEANT TO BE CALLED DIRECTLY!!!!
+ * Helper function that loads a given session from ID only after it has been verified by load_all_session()
+*/
+void load_session(int session_id)
+{
+    FILE *g;
+    g = fopen("test3.txt", "wt+");
+    fprintf(g, "\n%d", session_id);
+    fclose(g);
+    int id = session_id;
+    char *path;
+    
+    get_session_file_path(session_id, path);
+    
+    FILE *f;
+    char *line = NULL;
+    int ascii = 0;
+    bool toggle = false;
+    char *ptr;
+    // f = fopen(path, "r");
+    // while(fgets(line, sizeof(line), f))
+    // {
+        // if(toggle == false)
+        // {
+        //     ascii = line;
+        //     session_list[session_id].variables[ascii] = 1;
+        //     toggle = true;
+        // }
+        // else
+        // {
+        //     session_list[session_id].values[ascii] = strtod(line, &ptr);
+        //     toggle = false;
+        // } 
+    // }
+    // fclose(f);
+    // Might be possible to just grab info and chuck into the x[i] as it seems all possible
+    // things are generated and left blank if they aren't created/activated yet.
+}
 
 /**
  * Loads every session from the disk one by one if it exists.
@@ -232,6 +274,42 @@ void load_all_sessions() {
     // TODO: For Part 1.1, write your file operation code here.
     // Hint: Use get_session_file_path() to get the file path for each session.
     //       Don't forget to load all of sessions on the disk.
+    DIR *d; 
+    struct dirent *dir;
+    d = opendir(DATA_DIR);
+    int i = 0;
+    if(d)
+    {
+        while((dir = readdir(d)) != NULL)
+        {   
+            if(i < 3)
+            {
+                i++;
+                continue;
+            }
+            FILE *f;
+            f = fopen("test.txt", "wt+");
+            char *ptr;
+            char *str = dir->d_name;
+            // fprintf(f, "\n%s", dir->d_name);
+            int id;
+            sscanf(dir->d_name, "session%d.dat", &id);
+            fprintf(f, "\n%d", id);
+            fclose(f);
+            // const long id = strtol(str, &ptr, 10);
+            if(id < NUM_SESSIONS)
+            {
+                FILE *f;
+                f = fopen("test2.txt", "wt+");
+                fprintf(f, "%d", id);
+                fclose(f);
+                // printf("%ld", id);
+                load_session(id);
+            }
+        }
+    }
+    closedir(d);
+
 }
 
 /**
@@ -242,8 +320,21 @@ void load_all_sessions() {
 void save_session(int session_id) {
     // TODO: For Part 1.1, write your file operation code here.
     // Hint: Use get_session_file_path() to get the file path for each session.
+    char *path; 
+    get_session_file_path(session_id, path);
+    FILE *f;
+    f = fopen(path, "wt+");
+    for(int i = 0; i < LENOF(session_list[session_id].variables); i++)
+    {
+        bool x = session_list[session_id].variables[i];
+        if(x == 1)
+        {
+            fprintf(f, "%c\n", i + 'a');
+            fprintf(f, "%f\n", session_list[session_id].values[i]);
+        }
+    }
+    fclose(f);
 }
-
 /**
  * Assigns a browser ID to the new browser.
  * Determines the correct session ID for the new browser through the interaction with it.

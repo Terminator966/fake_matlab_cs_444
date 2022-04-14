@@ -234,26 +234,6 @@ void get_session_file_path(int session_id, char path[]) {
 */
 void load_session(int session_id)
 {
-    // char *test;
-    // sprintf(test, "./sessions/session%d.dat", session_id);
-    
-    // FILE *g;
-    // g = fopen("test3.txt", "wt+");
-    // fprintf(g, "\n%d", session_id);
-    // fclose(g);
-    // int id = session_id;
-    
-    // char *path; 
-    // // get_session_file_path(session_id, path);
-    // FILE *h;
-    // h = fopen("session0.dat", "r");
-    // fprintf(g, "\nI in session0.dat");
-    // fclose(g);
-    // fclose(h);
-    // sprintf(path, "./sessions/session%d.dat", session_id);
-    
-    // get_session_file_path(session_id, path);
-    // sprintf(path, "%s/session%d.dat", DATA_DIR, id);
     FILE *f;
     char line[256];
     int ascii = 0;
@@ -266,7 +246,6 @@ void load_session(int session_id)
     {
         if(toggle == false)
         {
-            printf("Char_pos: %d\n", atoi(line) - 'a');
             ascii = atoi(line) - 'a';
             session_list[session_id].variables[ascii] = 1;
             toggle = true;
@@ -275,14 +254,9 @@ void load_session(int session_id)
         {
             session_list[session_id].values[ascii] = strtod(line, &ptr);
             toggle = false;
-            printf("Bool: %d\n", session_list[session_id].variables[ascii]);
-            printf("Value: %f\n", session_list[session_id].values[ascii]);
         } 
     }
-    printf("Loaded things from %s\n", path);
     fclose(f);
-    // Might be possible to just grab info and chuck into the x[i] as it seems all possible
-    // things are generated and left blank if they aren't created/activated yet.
 }
 
 /**
@@ -291,10 +265,7 @@ void load_session(int session_id)
 void load_all_sessions() {
     // TODO: For Part 1.1, write your file operation code here.
     // Hint: Use get_session_file_path() to get the file path for each session.
-    //       Don't forget to load all of sessions on the disk.
-    // char cwd[PATH_MAX];
-    // getcwd(cwd, sizeof(cwd));
-    // printf("%s\n", cwd);
+    // Don't forget to load all of sessions on the disk.
     DIR *d; 
     struct dirent *dir;
     d = opendir(DATA_DIR);
@@ -313,23 +284,12 @@ void load_all_sessions() {
                 }
             }
             
-            // FILE *f;
-            // f = fopen("test.txt", "wt+");
             char *ptr;
             char *str = dir->d_name;
-            // fprintf(f, "\n%s", dir->d_name);
             int id;
             sscanf(dir->d_name, "session%d.dat", &id);
-            // fprintf(f, "\n%d", id);
-            // fclose(f);
-            // const long id = strtol(str, &ptr, 10);
             if(id < NUM_SESSIONS)
             {
-                // FILE *f;
-                // f = fopen("test2.txt", "wt+");
-                // fprintf(f, "%d", id);
-                // fclose(f);
-                // printf("%ld", id);
                 load_session(id);
             }
         }

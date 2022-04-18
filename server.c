@@ -463,7 +463,8 @@ void start_server(int port) {
         // TODO: For Part 2.1, creat a thread to run browser_handler() here.
         pthread_t thread_id;
         pthread_create(&thread_id, NULL, browser_handler, browser_socket_fd);
-        // pthread_join(thread_id, NULL);
+        // pthread_detach(thread_id);
+        pthread_join(&thread_id, NULL);
         // browser_handler(browser_socket_fd);
     }
 

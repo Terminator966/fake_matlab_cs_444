@@ -460,11 +460,12 @@ void start_server(int port) {
         }
 
         // Starts the handler thread for the new browser.
-        // TODO: For Part 2.1, creat a thread to run browser_handler() here.
-        browser_handler(browser_socket_fd);
+        // TODO: For Part 2.1, create a thread to run browser_handler() here.
+        pthread_t thread_id;
+        pthread_create(&thread_id, NULL, browser_handler, browser_socket_fd);
     }
 
-    // Closes the socket.
+    // Closes the socket. 
     close(server_socket_fd);
 }
 

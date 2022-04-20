@@ -35,8 +35,7 @@ void register_server();
 
 // Listens to the server.
 // Keeps receiving and printing the messages from the server.
-//Changed return type from void to void* to prevent issues with pthread_create
-void* server_listener();
+void server_listener();
 
 // Starts the browser.
 // Sets up the connection, start the listener thread,
@@ -106,7 +105,7 @@ void register_server() {
  * Listens to the server; keeps receiving and printing the messages from the server.
  */
   //Changed return value from void to void* to prevent isssues with pthread_create
-void* server_listener() {
+void server_listener() {
     // TODO: For Part 2.3, uncomment the loop code that was commented out
     //  when you are done with multithreading.
 

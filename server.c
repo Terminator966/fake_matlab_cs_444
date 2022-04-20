@@ -156,9 +156,17 @@ bool process_message(int session_id, const char message[]) {
     // Processes the result variable.
     token = strtok(data, " ");
     result_idx = token[0] - 'a';
+    
+    // Checks if the result variable is valid
+    if(strlen(token) > 1)
+	    return false;
 
     // Processes "=".
     token = strtok(NULL, " ");
+
+    // Checks to see if "=" is used correctly
+    if(strcmp(token, "=") != 0)
+	    return false;
 
     // Processes the first variable/value.
     token = strtok(NULL, " ");
@@ -166,7 +174,10 @@ bool process_message(int session_id, const char message[]) {
         first_value = strtod(token, NULL);
     } else {
         int first_idx = token[0] - 'a';
-        first_value = session_list[session_id].values[first_idx];
+	if(session_list[session_id].variables[first_idx] && (strlen(token) < 2))
+		first_value = session_list[session_id].values[first_idx];
+	else
+		return false;
     }
 
     // Processes the operation symbol.
@@ -179,16 +190,21 @@ bool process_message(int session_id, const char message[]) {
     symbol = token[0];
 
     // Processes the second variable/value.
-    token = strtok(NULL, " ");
+    if(!(token = strtok(NULL, " ")))
+	    return false;
     if (is_str_numeric(token)) {
         second_value = strtod(token, NULL);
     } else {
         int second_idx = token[0] - 'a';
-        second_value = session_list[session_id].values[second_idx];
+	if(session_list[session_id].variables[second_idx] && (strlen(token) < 2))
+		second_value = session_list[session_id].values[second_idx];
+	else
+		return false;
     }
 
     // No data should be left over thereafter.
-    token = strtok(NULL, " ");
+    if(token = strtok(NULL, " "))
+	    return false;
 
     session_list[session_id].variables[result_idx] = true;
 
@@ -200,7 +216,8 @@ bool process_message(int session_id, const char message[]) {
         session_list[session_id].values[result_idx] = first_value * second_value;
     } else if (symbol == '/') {
         session_list[session_id].values[result_idx] = first_value / second_value;
-    }
+    } else
+	    return false;
 
     return true;
 }
@@ -411,6 +428,8 @@ void browser_handler(int browser_socket_fd) {
         bool data_valid = process_message(session_id, message);
         if (!data_valid) {
             // TODO: For Part 3.1, add code here to send the error message to the browser.
+	    
+	    broadcast(session_id, "ERROR");	
             continue;
         }
 

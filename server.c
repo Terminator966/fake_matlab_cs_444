@@ -33,8 +33,55 @@ typedef struct session_struct {
     double values[NUM_VARIABLES];
 } session_t;
 
+struct hash 
+{
+    int key;
+    session_t session;
+};
+
+struct hash* hashArray[NUM_SESSIONS];
+struct hash* test;
+struct hash* item;
+
+int hashCode(int key) { return key % NUM_SESSIONS; }
+
+struct hash *search(int key)
+{
+    int hashIndex = hashCode(key);
+
+    while(hashArray[hashIndex] != NULL)
+    {
+        if(hashArray[hashIndex]->key == key)
+            return hashArray[hashIndex];
+        hashIndex++;
+        hashIndex %= NUM_SESSIONS;
+    }
+
+    return NULL;
+}
+
+void insert(int key)
+{
+    struct hash *item = (struct hash*) malloc(sizeof(struct hash));
+    session_t session;
+    item->key = key;
+    item->session = session;
+
+    int hashIndex = hashCode(key);
+
+    while(hashArray[hashIndex] != NULL && hashArray[hashIndex]->key != -1)
+    {
+        hashIndex++;
+        hashIndex %= NUM_SESSIONS;
+    }
+    hashArray[hashIndex] = item;
+}
+
 static browser_t browser_list[NUM_BROWSER];                             // Stores the information of all browsers.
 // TODO: For Part 3.2, convert the session_list to a simple hashmap/dictionary.
+// test = (struct hash*) malloc(sizeof(struct hash));
+// test->key = -1;
+// test->session = NULL;
 static session_t session_list[NUM_SESSIONS];                            // Stores the information of all sessions.
 static pthread_mutex_t browser_list_mutex = PTHREAD_MUTEX_INITIALIZER;  // A mutex lock for the browser list.
 static pthread_mutex_t session_list_mutex = PTHREAD_MUTEX_INITIALIZER;  // A mutex lock for the session list.
@@ -88,7 +135,9 @@ void start_server(int port);
  */
 void session_to_str(int session_id, char result[]) {
     memset(result, 0, BUFFER_LEN);
-    session_t session = session_list[session_id];
+    item = search(session_id);
+    session_t session = item->session;
+    // session_t session = session_list[session_id];
 
     for (int i = 0; i < NUM_VARIABLES; ++i) {
         if (session.variables[i]) {
@@ -174,17 +223,23 @@ bool process_message(int session_id, const char message[]) {
         first_value = strtod(token, NULL);
     } else {
         int first_idx = token[0] - 'a';
-	if(session_list[session_id].variables[first_idx] && (strlen(token) < 2))
-		first_value = session_list[session_id].values[first_idx];
-	else
-		return false;
+        item = search(session_id);
+        if(item->session.variables[first_idx] && (strlen(token) < 2))
+        // if(session_list[session_id].variables[first_idx] && (strlen(token) < 2))
+            // first_value = session_list[session_id].values[first_idx];
+            first_value = item->session.values[first_idx];
+        else
+            return false;
     }
 
     // Processes the operation symbol.
     token = strtok(NULL, " ");
     if (token == NULL) {
-        session_list[session_id].variables[result_idx] = true;
-        session_list[session_id].values[result_idx] = first_value;
+        item = search(session_id);
+        item->session.variables[result_idx] = true;
+        // session_list[session_id].variables[result_idx] = true;
+        // session_list[session_id].values[result_idx] = first_value;
+        item->session.values[result_idx] = first_value;
         return true;
     }
     symbol = token[0];
@@ -196,26 +251,35 @@ bool process_message(int session_id, const char message[]) {
         second_value = strtod(token, NULL);
     } else {
         int second_idx = token[0] - 'a';
-	if(session_list[session_id].variables[second_idx] && (strlen(token) < 2))
-		second_value = session_list[session_id].values[second_idx];
-	else
-		return false;
+        item = search(session_id);
+        if(item->session.variables[second_idx] && (strlen(token) < 2))
+        // if(session_list[session_id].variables[second_idx] && (strlen(token) < 2))
+        //     second_value = session_list[session_id].values[second_idx];
+            second_value = item->session.values[second_idx];
+        else
+            return false;
     }
 
     // No data should be left over thereafter.
     if(token = strtok(NULL, " "))
 	    return false;
 
-    session_list[session_id].variables[result_idx] = true;
+    item = search(session_id);
+    item->session.variables[result_idx] = true;
+    // session_list[session_id].variables[result_idx] = true;
 
     if (symbol == '+') {
-        session_list[session_id].values[result_idx] = first_value + second_value;
+        item->session.values[result_idx] = first_value + second_value;
+        // session_list[session_id].values[result_idx] = first_value + second_value;
     } else if (symbol == '-') {
-        session_list[session_id].values[result_idx] = first_value - second_value;
+        item->session.values[result_idx] = first_value - second_value;
+        // session_list[session_id].values[result_idx] = first_value - second_value;
     } else if (symbol == '*') {
-        session_list[session_id].values[result_idx] = first_value * second_value;
+        item->session.values[result_idx] = first_value * second_value;
+        // session_list[session_id].values[result_idx] = first_value * second_value;
     } else if (symbol == '/') {
-        session_list[session_id].values[result_idx] = first_value / second_value;
+        item->session.values[result_idx] = first_value / second_value;
+        // session_list[session_id].values[result_idx] = first_value / second_value;
     } else
 	    return false;
 
@@ -261,15 +325,18 @@ void load_session(int session_id)
     f = fopen(path, "r");
     while(fgets(line, 256, f))
     {
+        item = search(session_id);
         if(toggle == false)
         {
             ascii = atoi(line) - 'a';
-            session_list[session_id].variables[ascii] = 1;
+            item->session.variables[ascii] = 1;
+            // session_list[session_id].variables[ascii] = 1;
             toggle = true;
         }
         else
         {
-            session_list[session_id].values[ascii] = strtod(line, &ptr);
+            item->session.values[ascii] = strtod(line, &ptr);
+            // session_list[session_id].values[ascii] = strtod(line, &ptr);
             toggle = false;
         } 
     }
@@ -327,13 +394,17 @@ void save_session(int session_id) {
     get_session_file_path(session_id, path);
     FILE *f;
     f = fopen(path, "wt+");
-    for(int i = 0; i < LENOF(session_list[session_id].variables); i++)
+    item = search(session_id);
+    for(int i = 0; i < LENOF(item->session.variables); i++)
+    // for(int i = 0; i < LENOF(session_list[session_id].variables); i++)
     {
-        bool x = session_list[session_id].variables[i];
+        bool x = item->session.variables[i];
+        // bool x = session_list[session_id].variables[i];
         if(x == 1)
         {
             fprintf(f, "%d\n", i + 'a');
-            fprintf(f, "%f\n", session_list[session_id].values[i]);
+            fprintf(f, "%f\n", item->session.values[i]);
+            // fprintf(f, "%f\n", session_list[session_id].values[i]);
         }
     }
     fclose(f);
@@ -369,10 +440,13 @@ int register_browser(int browser_socket_fd) {
     int session_id = strtol(message, NULL, 10);
     if (session_id == -1) {
         for (int i = 0; i < NUM_SESSIONS; ++i) {
-            if (!session_list[i].in_use) {
+            item = search(session_id);
+            if (!item->session.in_use) {
+            // if (!session_list[i].in_use) {
                 session_id = i;
                 pthread_mutex_lock(&browser_list_mutex);
-                session_list[session_id].in_use = true;
+                item->session.in_use = true;
+                // session_list[session_id].in_use = true;
                 pthread_mutex_unlock(&browser_list_mutex);
                 break;
             }
